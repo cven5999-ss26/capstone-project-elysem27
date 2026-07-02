@@ -67,6 +67,36 @@ Examined the average daily kWh for each major category for reference.
 
 ## Initial Data Tidying
 
+Fortunately the dates are already in YYYY-MM-DD format, so R has been able to ingest those ok. 
+
+Some of these are in French! 
+
+I need to sort out any 0.000000 and NA entries to not skew the mean values for the categories. I also need to rename all of the column names that have spaces so I don't have to keep including "`" in every call-out.
+
+```{r}
+
+raw_power_data <- raw_power_data %>% 
+  rename(
+    customer_type = `Customer type`,
+    category = Category,
+    customer_code = `Customer Code`,
+    customer_type = `Customer type`,
+    kWh_avg_hourly = `Hourly kWh Average`,
+    kWh_avg_max = `Hourly kWh Max`,
+    kWh_per_day = `Daily kWh`
+  )
+
+power_na_clean <- raw_power_data %>% 
+  mutate(across(where(is.character), ~ na_if(., "NA")))    # Fix text "NA"
+
+na_counts <- power_na_clean %>%
+  group_by(customer_type) %>%
+  summarise(na_count = sum(is.na(category)))
+
+```
+
+The first time I tried to calculate the NA values I got 0... which is incorrect because I noted a bunch of NA values in the Category column. I first had to convert the text "NA" entries into actual NA entries. na_counts shows that there are 915 social institutions that 
+
 # Results
 
 [This will be the core of your analysis with specific requirements]

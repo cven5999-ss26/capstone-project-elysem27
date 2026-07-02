@@ -35,15 +35,35 @@ Since the file is a .xlsx file and not a .csv file, I had to install the "readxl
 # Load packages
 library(tidyverse)
 library(readxl)
+library(dplyr)
 
 # Read data
 raw_power_data <- read_excel(here::here("data/raw/Power_consumption_categorized_April_May_2026.xlsx"))
 
 ```
 
-
-
 ## Data Exploration Approach
+
+Time to view the data and see what needs tidying!
+
+```{r}
+glimpse(raw_power_data)
+
+dim(raw_power_data)
+
+# calculate average daily kWh per customer type
+
+customer_grouped <- raw_power_data %>% 
+  group_by(`Customer type`) %>% 
+  summarize(mean_daily_kWh = mean(`Daily kWh`, total_count = n()))
+
+
+```
+
+The initial data set is 165,588 rows and 7 columns. 
+The column names are "date", "category", "customer code", "customer type", "hourly kWh average", "hourly kWh Max", and "daily kWh". I see some initial values showing of 0.000000 under some entries, and many repeating categories or types. 
+
+Examined the average daily kWh for each major category for reference.
 
 ## Initial Data Tidying
 

@@ -1,0 +1,17 @@
+---
+title: "Solar grid power consumption profiles in DRC"
+author:
+  - name: "Elyse McMillen"
+    orcid: "0009-0002-2827-3062"
+    email: "elyse.mcmillen@colorado.edu"
+    affiliation:
+      - name: "University of Colorado Boulder"
+        department: "Department of Civil, Environmental and Architectural Engineering"
+        city: "Boulder"
+        state: "CO"
+        country: "USA"
+date: "July 02 2026"
+format: html
+editor: visual
+---
+

@@ -1,5 +1,5 @@
 ---
-title: "Solar grid power consumption profiles in DRC"
+title: "Solar mini-grid power consumption profiles in DRC"
 author:
   - name: "Elyse McMillen"
     orcid: "0009-0002-2827-3062"
@@ -15,3 +15,44 @@ format: html
 editor: visual
 ---
 
+# Introduction
+
+This project explores existing power consumption data over a set range of dates from April - May 2026. The data was gathered from an operational solar mini-grid in the DRC providing power to a local community. The goal of the project is to summarize the consumption by category to be able to scale the expected consumption for other sites to predict mini-grid sizing in conflict-ridden areas with minimal on-the-ground data collection.
+
+# Methods
+
+After receiving the initial data from the IT team that was received from smart meters, the raw data was examined and processed.
+
+## Reading the Data
+```{r}
+# Install packages
+install.packages("readxl")
+```
+
+Since the file is a .xlsx file and not a .csv file, I had to install the "readxl" package. I had some initial challenges loading the "readxl" package but finally was able to get it to work after uninstalling and re-installing.
+
+```{r}
+# Load packages
+library(tidyverse)
+library(readxl)
+
+# Read data
+raw_power_data <- read_excel(here::here("data/raw/Power_consumption_categorized_April_May_2026.xlsx"))
+
+```
+
+
+
+## Data Exploration Approach
+
+## Initial Data Tidying
+
+# Results
+
+[This will be the core of your analysis with specific requirements]
+
+# Conclusions
+
+## Summary of Findings
+
+## Questions and Next Steps

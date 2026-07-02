@@ -2,7 +2,7 @@
 
 ## General information
 
-1.  Title of Dataset:  Load profiles for mini-grids in the DRC
+1.  Title of Dataset:  Load profiles for mini-grid sites in the DRC
 
 2.  Author Information
 
@@ -13,16 +13,7 @@
 - ORCID iD: 0009-0002-2827-3062
 - Email:elysem27@gmail.com 
 
-**Author B**
-
-- First name:
-- Surname:
-- ORCID iD
-- Email:
-
-etc.
-
-3.  Date of data collection (single date, range, approximate date):
+3.  Date of data collection (single date, range, approximate date): April - May 2026
 
 4.  Geographic location of data collection: Goma, DRC
 
@@ -37,7 +28,7 @@ Recommended: This work is licensed under the Creative Commons Attribution 4.0 In
 
 2.  Links to publications that cite or use the data: N/A
 
-3.  Links to other publicly accessible locations of the data: -
+3.  Links to other publicly accessible locations of the data: N/A
 
 4.  Links/relationships to ancillary data sets: N/A
 
@@ -59,12 +50,12 @@ other micro-grids.
 3.  Instrument- or software-specific information needed to interpret the
     data: N/A
 
-4.  Standards and calibration information, if appropriate: -
+4.  Standards and calibration information, if appropriate: N/A
 
-5.  Environmental/experimental conditions: 
+5.  Environmental/experimental conditions: Goma DRC only 2 months out of the year
 
 6.  Describe any quality-assurance procedures performed on the data: Removed
-entries with no data, removed duplicates, etc.
+entries with no usage data, noted and grouped NA subcategories.
 
 7.  People involved with sample collection, processing, analysis and/or
     submission: Nuru IT team

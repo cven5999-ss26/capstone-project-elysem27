@@ -10,7 +10,7 @@ author:
         city: "Boulder"
         state: "CO"
         country: "USA"
-date: "July 02 2026"
+date: "July 05 2026"
 format: html
 editor: visual
 
@@ -277,7 +277,7 @@ ggplot(pie_data, aes(x = "", y = total_kWh, fill = customer_type)) +
   geom_text(
     aes(y = label_pos, label = percent(percentage, accuracy = 0.1)), 
     size = 4, 
-    color = "black"
+    color = "black", 
   ) +
   
   # Clean up the background grid and axis lines from standard ggplot
@@ -294,14 +294,47 @@ ggplot(pie_data, aes(x = "", y = total_kWh, fill = customer_type)) +
 
 ```
 
-Even though C&I have the largest daily kWh usage, SME accounts for the largest share of energy use, followed by Residential and C&I based on the sheer number of households and SMEs compared to the larger industrial partners.
+Even though C&I have the largest daily kWh usage, SME accounts for the largest share of energy use, followed by Residential and C&I based on the sheer number of households and SMEs compared to the larger industrial partners. Let's create one more stacked chart to examine the daily kWh trends over time by type. 
+
+```{r}
+#| message: false
+#| warning: false
+#| fig-alt: "A stacked chart showing average energy loads across calendar days, filtered to exclude rows with zero daily load. Each bar represents a single day's total consumption, color-coded by connection type to illustrate contribution to daily load."
+
+# Calculate total max consumption during the peak load as a worst case
+daily_total_composition <- summary_by_group %>%
+  # Keep only the rows where the peak load value is not zero
+  filter(kWh_per_day != 0) %>%
+  group_by(Date, customer_type) %>%
+  summarise(
+    Total_kWh_avg = sum(kWh_per_day, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Preview the daily kWh values for each type
+print(daily_total_composition)
+
+# Plot the chart with daily composition separated by type
+ggplot(daily_total_composition, aes(x = Date, y = Total_kWh_avg, fill = customer_type)) +
+  geom_area(alpha = 0.8, color = "white", linewidth = 0.1) +
+  labs(
+    title = "Daily Grid Load Curve and Type Composition",
+    subtitle = "Aggregated daily totals highlighting average demand",
+    x = "Date",
+    y = "Daily Load (average kWh/day)",
+    fill = "Connection Type"
+  ) +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set2") 
+```
+
 
 It's also important to understand the peak kWh values to right-size the grid. This comes from the max kWh/h values, taking the maximum load during the highest use point during the day. Let's first group by day, then sum the value per day and see the composition from different types. This will give insights for the peak rated value for the grid (kWp) and potential back-up sources like diesel gen-sets and hydropower partnerships.
 
 ```{r}
 #| message: false
 #| warning: false
-#| fig-alt: "A stacked chart showing total daily energy loads across calendar days, filtered to exclude rows with zero peak load. Each bar represents a single day's total consumption, color-coded by connection type to illustrate contribution to peak load."
+#| fig-alt: "A stacked chart showing total daily energy loads across calendar days, filtered to exclude rows with zero peak load. Each bar represents a single day's highest consumption, color-coded by connection type to illustrate contribution to peak load."
 
 # Calculate total max consumption during the peak load as a worst case
 daily_composition <- summary_by_group %>%
@@ -320,8 +353,8 @@ print(daily_composition)
 ggplot(daily_composition, aes(x = Date, y = Max_kWh_peak, fill = customer_type)) +
   geom_area(alpha = 0.8, color = "white", linewidth = 0.1) +
   labs(
-    title = "Daily Grid Load Curve and Type Composition",
-    subtitle = "Aggregated daily totals highlighting peak demand periods",
+    title = "Peak Grid Load Curve and Type Composition",
+    subtitle = "Aggregated hourly totals highlighting peak demand periods",
     x = "Date",
     y = "Peak Load (max hourly kWh)",
     fill = "Connection Type"
@@ -335,14 +368,20 @@ The chart shows the contribution of each type to the peak load values. Since thi
 # Conclusions
 
 The data has shown the following trends and considerations:
-- 
-- 
+The 2 months of data showed a generally consistent daily load, but the peak load varied significantly during the time frame. 
+C&Is made up a significant amount of the daily kWh demand per customer, but was actually slightly less total demand (26%) than SMEs (38%) and residential (33%) customers due to the number of clients total. Social Institutions were a small portion of daily demand (2%).
+SMEs were primarily uncategorized, and there was a huge spread in mean for SME categories that exist, especially highlighting the higher end of demand for Mills and Factories. Social Institution categories were much more consistent at <5kWh/day, but there were several categories with very few customers.
+It was not possible to make claims for general seasonal or year-long trends due to the limited time frame of the data.
+
 
 ## Summary of Findings
 
+The evidence presented above gives substantiation for separating out the daily and peak demand profiles for different categories of customers, especially in the C&I (largest by-category demand) and SME (broadest range of demand) assumptions. These considerations will allow for more accurate forecasting of demand for right-sizing future mini-grids in this region by ensuring peak load cases are accurately predicted and total daily demand is allocated correctly. 
+
+
 ## Questions and Next Steps
 
-With a huge proportion of SMEs still uncategorized (NA), it is difficult to get accurate power consumption values from this which would be beneficial to scale based on the number of customers. Since there are some SME categories that differ significantly in power consumption, it is important to have as much granularity as possilbe to set predicted consumption values.
+With a huge proportion of SMEs still uncategorized (NA), it is difficult to get accurate power consumption values from this which would be beneficial to scale based on the number of customers. Since there are some SME categories that differ significantly in power consumption, it is important to have as much granularity as possible to set predicted consumption values.
 
 It would be good to understand the seasonal variation in power consumption, which will require sourcing more data over time. In addition, it would be interesting to review this data every year to see if average power consumption for residences and SMEs is increasing based on more reliable and affordable access to energy (such as buying more appliances etc.)
 

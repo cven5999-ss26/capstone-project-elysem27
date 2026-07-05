@@ -17,20 +17,21 @@ editor: visual
 
 # Introduction
 
-This project explores existing power consumption data over a set range of dates from April - May 2026. The data was gathered from an operational solar mini-grid in the DRC providing power to a local community. The goal of the project is to summarize the consumption by category to be able to scale the expected consumption for other sites to predict mini-grid sizing in conflict-ridden areas with minimal on-the-ground data collection.
+This project explores existing power consumption data over a set range of dates from April - May 2026. The data was gathered from an operational solar mini-grid in the DRC providing power to a local community. The goal of the project is to summarize the consumption by category to be able to scale the expected consumption for other sites to predict mini-grid sizing in conflict-ridden areas with minimal on-the-ground data collection. The intent is to group by category and type for the client and be able to summarize statistics on daily and peak power consumption to feed forward to other grid planning projects.
 
 # Methods
 
-After receiving the initial data from the IT team that was received from smart meters, the raw data was examined and processed.
+The data was collected from the IT team at the organization after specifying the intent of the data. After receiving the initial data from the IT team that was gathered from smart meters, the raw data was examined and processed for anonymity. No financial information was included in the pulls. The names of the clients were initially included so that type of enterprise could be inferred in some cases (i.e. school or hospital) then the names were removed before adding the raw data. The data needs to be sorted, matched with business types, and collated to gather usage statistics. 
 
 ## Reading the Data
 ```{r}
 # Install packages
 install.packages("readxl")
 install.packages("writexl")
+install.packages("polyglotr")
 ```
 
-Since the file is a .xlsx file and not a .csv file, I had to install the "readxl" package. I had some initial challenges loading the "readxl" package but finally was able to get it to work after uninstalling and re-installing.
+Since the file is a .xlsx file and not a .csv file, I had to install the "readxl" and "writexl" packages. I had some initial challenges loading the "readxl" package but finally was able to get it to work after uninstalling and re-installing. In hindsight, converting the file to a .csv might have been an easier way to start. 
 
 ```{r}
 # Load packages
@@ -38,9 +39,10 @@ library(tidyverse)
 library(readxl)
 library(dplyr)
 library (writexl)
+library (polyglotr)
 
 # Read data
-raw_power_data <- read_excel(here::here("data/raw/Power_consumption_categorized_April_May_2026.xlsx"))
+raw_power_data <- read_excel(here::here("data/raw/Power_consumption_categorized_EN_April_May_2026.xlsx"))
 
 ```
 
@@ -54,26 +56,31 @@ glimpse(raw_power_data)
 dim(raw_power_data)
 
 # calculate average daily kWh per customer type
-
 customer_grouped <- raw_power_data %>% 
   group_by(`Customer type`) %>% 
   summarize(mean_daily_kWh = mean(`Daily kWh`, total_count = n()))
 
+# 4 main types of customers to examine
+
+# view the existing customer categories
+category_grouped <- raw_power_data %>% 
+  group_by(Category) %>% 
+  summarize(mean_daily_kWh = mean(`Daily kWh`, total_count = n()))
+
+# 21 groupings of client type with drastically different power consumption
 
 ```
 
 The initial data set is 165,588 rows and 7 columns. 
 The column names are "date", "category", "customer code", "customer type", "hourly kWh average", "hourly kWh Max", and "daily kWh". I see some initial values showing of 0.000000 under some entries, and many repeating categories or types. 
 
-Examined the average daily kWh for each major category for reference.
+Examined the average daily kWh for each major category and type for reference.
 
 ## Initial Data Tidying
 
 Fortunately the dates are already in YYYY-MM-DD format, so R has been able to ingest those ok. 
 
-Some of these are in French! 
-
-I need to sort out any 0.000000 and NA entries to not skew the mean values for the categories. I also need to rename all of the column names that have spaces so I don't have to keep including "`" in every call-out.
+The data needs to sort out any 0.000000 and NA entries to not skew the mean values for the categories. The column names that have spaces need to be renames to remove the need to include "`" in every call-out.
 
 ```{r}
 
@@ -88,20 +95,31 @@ clean_power_data <- raw_power_data %>%
     kWh_per_day = `Daily kWh`
   )
 
+# convert NA text to NA data entry in the sheet
 power_na_clean <- clean_power_data %>% 
   mutate(across(where(is.character), ~ na_if(., "NA")))    # Fix text "NA"
 
+# count the number of NA data entries
 na_counts <- power_na_clean %>%
   group_by(customer_type) %>%
   summarise(na_count = sum(is.na(category)))
 
+# Remove rows with all 0.0000 values (some 0 values are OK since it's by day, not every client will use power every day)
+power_filtered <- power_na_clean %>%
+  filter(if_any(c(kWh_avg_hourly, kWh_avg_max, kWh_per_day), ~ .x != 0))
+
 ```
 
-The first time I tried to calculate the NA values I got 0... which is incorrect because I noted a bunch of NA values in the Category column. I first had to convert the text "NA" entries into actual NA entries. na_counts shows that there are 915 social institutions that are labeled NA. 
+There are >32,000 NA category entries in SME type. Removing all of these entries will skew the data significantly. Instead, keep NA category and treat as a general category.
+
+The first time I tried to calculate the NA values I got 0... which is incorrect because I noted a bunch of NA values in the Category column. I first had to convert the text "NA" entries into actual NA entries.
+
+Sorting out the entries with all 0 valued for the three numerical columns, the data set shrank from 165,588 rows to 149,263 rows. This now just includes data that has usable numerical values.
+
 
 ```{r}
 # save as a .xlsx file 
-write_xlsx(clean_power_data, here::here("data/processed/clean_power_data.xlsx"))
+write_xlsx(power_filtered, here::here("data/processed/power_filtered.xlsx"))
 
 ```
 

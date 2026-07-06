@@ -1,5 +1,5 @@
 ---
-title: "Solar mini-grid power consumption profiles in DRC"
+title: "Solar Mini-Grid Power Consumption Profiles in the DRC"
 author:
   - name: "Elyse McMillen"
     orcid: "0009-0002-2827-3062"

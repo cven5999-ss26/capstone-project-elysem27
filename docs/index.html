@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Elyse McMillen">
-<meta name="dcterms.date" content="2026-07-02">
+<meta name="dcterms.date" content="2026-07-06">
 
 <title>Solar mini-grid power consumption profiles in DRC</title>
 <style>
@@ -108,7 +108,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">July 2, 2026</p>
+      <p class="date">July 6, 2026</p>
     </div>
   </div>
   
@@ -135,7 +135,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"writexl"</span>)</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"polyglotr"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>Since the file is a .xlsx file and not a .csv file, I had to install the “readxl” and “writexl” packages. I had some initial challenges loading the “readxl” package but finally was able to get it to work after uninstalling and re-installing. In hindsight, converting the file to a .csv might have been an easier way to start.</p>
+<p>Since the file is a .xlsx file and not a .csv file, it’s necessary to install the “readxl” and “writexl” packages. There were some initial challenges loading the “readxl” package but it finally worked after uninstalling and re-installing. In hindsight, converting the file to a .csv might have been an easier way to start.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load packages</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
@@ -152,7 +152,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="data-exploration-approach" class="level2">
 <h2 class="anchored" data-anchor-id="data-exploration-approach">Data Exploration Approach</h2>
-<p>Time to view the data and see what needs tidying!</p>
+<p>First, view the data and see what needs tidying!</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(raw_power_data)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
@@ -184,44 +184,45 @@ $ `Daily kWh`          &lt;dbl&gt; 107.9200000, 0.0000000, 331.7800000, 333.8200
 <span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="co"># 21 groupings of client type with drastically different power consumption</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<p>The initial data set is 165,588 rows and 7 columns. The column names are “date”, “category”, “customer code”, “customer type”, “hourly kWh average”, “hourly kWh Max”, and “daily kWh”. I see some initial values showing of 0.000000 under some entries, and many repeating categories or types.</p>
+<p>The initial data set is 165,588 rows and 7 columns. The column names are “date”, “category”, “customer code”, “customer type”, “hourly kWh average”, “hourly kWh Max”, and “daily kWh”. There are initial values showing of 0.000000 under some entries, and many repeating categories or types.</p>
 <p>Examined the average daily kWh for each major category and type for reference.</p>
 </section>
 <section id="initial-data-tidying" class="level2">
 <h2 class="anchored" data-anchor-id="initial-data-tidying">Initial Data Tidying</h2>
-<p>Fortunately the dates are already in YYYY-MM-DD format, so R has been able to ingest those ok.</p>
+<p>Fortunately the dates are already in YYYY-MM-DD format, so R has been able to ingest those directly.</p>
 <p>The data needs to sort out any 0.000000 and NA entries to not skew the mean values for the categories. The column names that have spaces need to be renames to remove the need to include “`” in every call-out.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>clean_power_data <span class="ot">&lt;-</span> raw_power_data <span class="sc">%&gt;%</span> </span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">customer_type =</span> <span class="st">`</span><span class="at">Customer type</span><span class="st">`</span>,</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">category =</span> Category,</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">customer_code =</span> <span class="st">`</span><span class="at">Customer Code</span><span class="st">`</span>,</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">customer_type =</span> <span class="st">`</span><span class="at">Customer type</span><span class="st">`</span>,</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">kWh_avg_hourly =</span> <span class="st">`</span><span class="at">Hourly kWh Average</span><span class="st">`</span>,</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">kWh_avg_max =</span> <span class="st">`</span><span class="at">Hourly kWh Max</span><span class="st">`</span>,</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">kWh_per_day =</span> <span class="st">`</span><span class="at">Daily kWh</span><span class="st">`</span></span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="co"># convert NA text to NA data entry in the sheet</span></span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>power_na_clean <span class="ot">&lt;-</span> clean_power_data <span class="sc">%&gt;%</span> </span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">where</span>(is.character), <span class="sc">~</span> <span class="fu">na_if</span>(., <span class="st">"NA"</span>)))</span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a><span class="co"># count the number of NA data entries</span></span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>na_counts <span class="ot">&lt;-</span> power_na_clean <span class="sc">%&gt;%</span></span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(customer_type) <span class="sc">%&gt;%</span></span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">na_count =</span> <span class="fu">sum</span>(<span class="fu">is.na</span>(category)))</span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove rows with all 0.0000 values (some 0 values are OK since it's by day</span></span>
-<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a><span class="co"># , not every client will use power every day)</span></span>
-<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>power_filtered <span class="ot">&lt;-</span> power_na_clean <span class="sc">%&gt;%</span></span>
-<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">if_any</span>(<span class="fu">c</span>(kWh_avg_hourly, kWh_avg_max, kWh_per_day), <span class="sc">~</span> .x <span class="sc">!=</span> <span class="dv">0</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># rename the data columns</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>clean_power_data <span class="ot">&lt;-</span> raw_power_data <span class="sc">%&gt;%</span> </span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">customer_type =</span> <span class="st">`</span><span class="at">Customer type</span><span class="st">`</span>,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">category =</span> Category,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">customer_code =</span> <span class="st">`</span><span class="at">Customer Code</span><span class="st">`</span>,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">customer_type =</span> <span class="st">`</span><span class="at">Customer type</span><span class="st">`</span>,</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">kWh_avg_hourly =</span> <span class="st">`</span><span class="at">Hourly kWh Average</span><span class="st">`</span>,</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">kWh_avg_max =</span> <span class="st">`</span><span class="at">Hourly kWh Max</span><span class="st">`</span>,</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">kWh_per_day =</span> <span class="st">`</span><span class="at">Daily kWh</span><span class="st">`</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="co"># convert NA text to NA data entry in the sheet</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>power_na_clean <span class="ot">&lt;-</span> clean_power_data <span class="sc">%&gt;%</span> </span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">where</span>(is.character), <span class="sc">~</span> <span class="fu">na_if</span>(., <span class="st">"NA"</span>)))</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="co"># count the number of NA data entries</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>na_counts <span class="ot">&lt;-</span> power_na_clean <span class="sc">%&gt;%</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(customer_type) <span class="sc">%&gt;%</span></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">na_count =</span> <span class="fu">sum</span>(<span class="fu">is.na</span>(category)))</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove rows with all 0.0000 values (some 0 values are OK since </span></span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a><span class="co"># it's by day, not every client will use power every day)</span></span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>power_filtered <span class="ot">&lt;-</span> power_na_clean <span class="sc">%&gt;%</span></span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">if_any</span>(<span class="fu">c</span>(kWh_avg_hourly, kWh_avg_max, kWh_per_day), <span class="sc">~</span> .x <span class="sc">!=</span> <span class="dv">0</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>There are &gt;32,000 NA category entries in SME type. Removing all of these entries will skew the data significantly. Instead, keep NA category and treat as a general category.</p>
-<p>The first time I tried to calculate the NA values I got 0… which is incorrect because I noted a bunch of NA values in the Category column. I first had to convert the text “NA” entries into actual NA entries.</p>
+<p>The first time calculating the NA values was 0… which is incorrect because there were many NA values in the Category column. It was necessary to first convert the text “NA” entries into actual NA entries.</p>
 <p>Sorting out the entries with all 0 valued for the three numerical columns, the data set shrank from 165,588 rows to 149,263 rows. This now just includes data that has usable numerical values.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># save as a .xlsx file </span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># save as a new processed .xlsx file </span></span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">write_xlsx</span>(power_filtered, here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data/processed/power_filtered.xlsx"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
@@ -238,16 +239,16 @@ $ `Daily kWh`          &lt;dbl&gt; 107.9200000, 0.0000000, 331.7800000, 333.8200
 <span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Next, view the statistics for average kWh per day and wrap these into a </span></span>
 <span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co"># usable table format </span></span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>stat_power_table <span class="ot">&lt;-</span> summary_by_group <span class="sc">%&gt;%</span> </span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">Total_Observations =</span> <span class="fu">n</span>(),</span>
-<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">Mean_Daily_kWh =</span> <span class="fu">mean</span>(kWh_per_day, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">SD_Daily_kWh =</span> <span class="fu">sd</span>(kWh_per_day, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">Min_Daily_kWh =</span> <span class="fu">min</span>(kWh_per_day, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">Max_Daily_kWh =</span> <span class="fu">max</span>(kWh_per_day, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>stat_power_table <span class="ot">&lt;-</span> summary_by_group <span class="sc">%&gt;%</span> </span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">Total_Observations =</span> <span class="fu">n</span>(),</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">Mean_Daily_kWh =</span> <span class="fu">mean</span>(kWh_per_day, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">SD_Daily_kWh =</span> <span class="fu">sd</span>(kWh_per_day, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">Min_Daily_kWh =</span> <span class="fu">min</span>(kWh_per_day, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">Max_Daily_kWh =</span> <span class="fu">max</span>(kWh_per_day, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Display the table</span></span>
 <span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>stat_power_table <span class="sc">%&gt;%</span> </span>
 <span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>(</span>
 <span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">digits =</span> <span class="dv">2</span>,</span>
@@ -516,7 +517,8 @@ $ `Daily kWh`          &lt;dbl&gt; 107.9200000, 0.0000000, 331.7800000, 333.8200
 </table>
 </div>
 </div>
-<p>This table shows the general spread for each type and category of clients. Let’s make a box plot to see this graphically and compare spread of data. Since the scales for the data are so different between types, show the 4 different box plots on different scales. Use this to examine the different categories in each type.</p>
+<p>This table shows the general spread for each type and category of clients. Next, make a box plot to see this graphically and compare spread of data. Since the scales for the data are so different between types, show the 4 different box plots on different scales. Use this to examine the different categories in each type.</p>
+<p>Daily kWh usage for Social Institutions is shown in <a href="#fig-HH-comp" class="quarto-xref">Figure&nbsp;1</a>.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Figure 1: Residential</span></span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>summary_by_group <span class="sc">%&gt;%</span> </span>
@@ -524,19 +526,25 @@ $ `Daily kWh`          &lt;dbl&gt; 107.9200000, 0.0000000, 331.7800000, 333.8200
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> category, <span class="at">y =</span> kWh_per_day, <span class="at">fill =</span> category)) <span class="sc">+</span> </span>
 <span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outlier.alpha =</span> <span class="fl">0.05</span>, <span class="at">show.legend =</span> <span class="cn">FALSE</span>) <span class="sc">+</span> </span>
 <span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">7</span>)) <span class="sc">+</span> </span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Residential Profiles"</span>, <span class="at">x =</span> <span class="st">"Type"</span>, <span class="at">y =</span> <span class="st">"Daily kWh"</span>) <span class="sc">+</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Residential Profiles"</span>, <span class="at">x =</span> <span class="st">"Category"</span>, <span class="at">y =</span> <span class="st">"Daily kWh"</span>) <span class="sc">+</span></span>
 <span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
 <span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span>) </span>
 <span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="index_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" alt="A boxplot showing the distribution of daily electricity consumption in kWh for residential customers, grouped by connection type. Standard rates show a tighter distribution around 1 kWh, there is a concentration of high-use households around 4-5kWh that may be operating small businesses out of their residence." width="672"></p>
+<div id="fig-HH-comp" class="quarto-float quarto-figure quarto-figure-center anchored" alt="A boxplot showing the distribution of daily electricity consumption in kWh for residential customers, grouped by the one connection category. Standard rates show a tighter distribution around 1 kWh, there is a concentration of high-use households around 4-5kWh that may be operating small businesses out of their residence.">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-HH-comp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-HH-comp-1.png" class="img-fluid figure-img" alt="A boxplot showing the distribution of daily electricity consumption in kWh for residential customers, grouped by the one connection category. Standard rates show a tighter distribution around 1 kWh, there is a concentration of high-use households around 4-5kWh that may be operating small businesses out of their residence." width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-HH-comp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Proportion of daily total energy usage across Resident categories
+</figcaption>
 </figure>
 </div>
 </div>
 </div>
-<p>Standard rates for households show a tighter distribution around 1 kWh, but there is a concentration of high-use households around 4-5kWh that may be operating small businesses out of their residence.”</p>
+<p>Standard rates for households show a tighter distribution around 1 kWh, but there is a concentration of high-use households around 4-5kWh that may be operating small businesses out of their residence.</p>
+<p>Daily kWh usage for Social Institutions is shown in <a href="#fig-SME-comp" class="quarto-xref">Figure&nbsp;2</a>.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Figure 2: SME</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>summary_by_group <span class="sc">%&gt;%</span> </span>
@@ -544,19 +552,25 @@ $ `Daily kWh`          &lt;dbl&gt; 107.9200000, 0.0000000, 331.7800000, 333.8200
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> category, <span class="at">y =</span> kWh_per_day, <span class="at">fill =</span> category)) <span class="sc">+</span> </span>
 <span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outlier.alpha =</span> <span class="fl">0.05</span>, <span class="at">show.legend =</span> <span class="cn">FALSE</span>) <span class="sc">+</span> </span>
 <span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">55</span>)) <span class="sc">+</span> </span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Small Medium Enterprises"</span>, <span class="at">x =</span> <span class="st">"Type"</span>, <span class="at">y =</span> <span class="st">"Daily kWh"</span>) <span class="sc">+</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Small Medium Enterprises"</span>, <span class="at">x =</span> <span class="st">"Category"</span>, <span class="at">y =</span> <span class="st">"Daily kWh"</span>) <span class="sc">+</span></span>
 <span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()<span class="sc">+</span></span>
 <span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span>) </span>
 <span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  ) </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="index_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" alt="A boxplot showing the distribution of daily electricity consumption in kWh for SME customers, grouped by type. Standard rates for most categories are below 10kWh, while several categories such as Mill and Factory are higher." width="672"></p>
+<div id="fig-SME-comp" class="quarto-float quarto-figure quarto-figure-center anchored" alt="A boxplot showing the distribution of daily electricity consumption in kWh for SME customers, grouped by category. Standard rates for most categories are below 10kWh, while several categories such as Mill and Factory are higher.">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-SME-comp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-SME-comp-1.png" class="img-fluid figure-img" alt="A boxplot showing the distribution of daily electricity consumption in kWh for SME customers, grouped by category. Standard rates for most categories are below 10kWh, while several categories such as Mill and Factory are higher." width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-SME-comp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Proportion of daily total energy usage across SME categories
+</figcaption>
 </figure>
 </div>
 </div>
 </div>
 <p>Standard rates for most categories of SME are below 10kWh, while several categories such as Mill and Factory are higher. There is a large difference between values within the SME type.</p>
+<p>Daily kWh usage for Social Institutions is shown in <a href="#fig-SI-comp" class="quarto-xref">Figure&nbsp;3</a>.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Figure 3: Social Institution</span></span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>summary_by_group <span class="sc">%&gt;%</span> </span>
@@ -564,19 +578,25 @@ $ `Daily kWh`          &lt;dbl&gt; 107.9200000, 0.0000000, 331.7800000, 333.8200
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> category, <span class="at">y =</span> kWh_per_day, <span class="at">fill =</span> category)) <span class="sc">+</span> </span>
 <span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outlier.alpha =</span> <span class="fl">0.05</span>, <span class="at">show.legend =</span> <span class="cn">FALSE</span>) <span class="sc">+</span> </span>
 <span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">15</span>)) <span class="sc">+</span> </span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Social Institutions"</span>, <span class="at">x =</span> <span class="st">"Type"</span>, <span class="at">y =</span> <span class="st">"Daily kWh"</span>) <span class="sc">+</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Social Institutions"</span>, <span class="at">x =</span> <span class="st">"Category"</span>, <span class="at">y =</span> <span class="st">"Daily kWh"</span>) <span class="sc">+</span></span>
 <span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
 <span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span>) </span>
 <span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="index_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid figure-img" alt="A boxplot showing the distribution of daily electricity consumption in kWh for Social Institutions , grouped by type. Standard rates for most categories are below 5kWh, with the largest usage from NGO and Carpentry." width="672"></p>
+<div id="fig-SI-comp" class="quarto-float quarto-figure quarto-figure-center anchored" alt="A boxplot showing the distribution of daily electricity consumption in kWh for Social Institutions, grouped by category. Standard rates for most categories are below 5kWh, with the largest usage from NGO and Carpentry.">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-SI-comp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-SI-comp-1.png" class="img-fluid figure-img" alt="A boxplot showing the distribution of daily electricity consumption in kWh for Social Institutions, grouped by category. Standard rates for most categories are below 5kWh, with the largest usage from NGO and Carpentry." width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-SI-comp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Proportion of daily total energy usage across Social Institution categories
+</figcaption>
 </figure>
 </div>
 </div>
 </div>
-<p>Standard rates for most categories in Social Institutions are below 5kWh, with the largest usage from NGO and Carpentry.</p>
+<p>Standard rates for most categories in Social Institutions are below 5kWh, with the largest usage from NGO and Carpentry. There is a much smaller sample size for Social Institutions which limits the conidence in the spread of the data.</p>
+<p>Daily kWh usage from C&amp;I clients is shown in <a href="#fig-CI-comp" class="quarto-xref">Figure&nbsp;4</a>.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Figure 4: C&amp;I</span></span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>summary_by_group <span class="sc">%&gt;%</span> </span>
@@ -584,20 +604,26 @@ $ `Daily kWh`          &lt;dbl&gt; 107.9200000, 0.0000000, 331.7800000, 333.8200
 <span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> category, <span class="at">y =</span> kWh_per_day, <span class="at">fill =</span> category)) <span class="sc">+</span> </span>
 <span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outlier.alpha =</span> <span class="fl">0.05</span>, <span class="at">show.legend =</span> <span class="cn">FALSE</span>) <span class="sc">+</span> </span>
 <span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">500</span>)) <span class="sc">+</span> </span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"C&amp;I Profiles"</span>, <span class="at">x =</span> <span class="st">"Type"</span>, <span class="at">y =</span> <span class="st">"Daily kWh"</span>) <span class="sc">+</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"C&amp;I Profiles"</span>, <span class="at">x =</span> <span class="st">"Category"</span>, <span class="at">y =</span> <span class="st">"Daily kWh"</span>) <span class="sc">+</span></span>
 <span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()<span class="sc">+</span></span>
 <span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span>) </span>
 <span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="index_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" alt="A boxplot showing the distribution of daily electricity consumption in kWh for Social Institutions , grouped by type. Standard rates for most categories are below 5kWh, with the largest usage from NGO and Carpentry." width="672"></p>
+<div id="fig-CI-comp" class="quarto-float quarto-figure quarto-figure-center anchored" alt="A boxplot showing the distribution of daily electricity consumption in kWh for C&amp;Is, grouped by category.">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-CI-comp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-CI-comp-1.png" class="img-fluid figure-img" alt="A boxplot showing the distribution of daily electricity consumption in kWh for C&amp;Is, grouped by category." width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-CI-comp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Proportion of daily total energy usage across C&amp;I categories
+</figcaption>
 </figure>
 </div>
 </div>
 </div>
 <p>Average C&amp;I usage is significantly higher than the other types, averaging over 100kWh/day.</p>
-<p>Now that the spread of daily kWh has been assessed for each type and category, let’s look at the general composition of daily power consumption.</p>
+<p>Now that the spread of daily kWh has been assessed for each type and category, we can look at the general composition of daily power consumption.</p>
+<p><a href="#fig-pie-comp" class="quarto-xref">Figure&nbsp;5</a> Shows the overall daily kWh consumption by customer type.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(scales) </span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -619,27 +645,28 @@ $ `Daily kWh`          &lt;dbl&gt; 107.9200000, 0.0000000, 331.7800000, 333.8200
 <span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> <span class="dv">4</span>, </span>
 <span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"black"</span>, </span>
 <span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Clean up the background grid and axis lines from standard ggplot</span></span>
-<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>() <span class="sc">+</span> </span>
-<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Overall Composition of Daily kWh Consumption"</span>,</span>
-<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">"Proportion of total energy usage across customer types"</span>,</span>
-<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"Customer Type"</span></span>
-<span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb15-29"><a href="#cb15-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
-<span id="cb15-30"><a href="#cb15-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">"bold"</span>, <span class="at">hjust =</span> <span class="fl">0.5</span>, <span class="at">size =</span> <span class="dv">14</span>),</span>
-<span id="cb15-31"><a href="#cb15-31" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.subtitle =</span> <span class="fu">element_text</span>(<span class="at">hjust =</span> <span class="fl">0.5</span>, <span class="at">color =</span> <span class="st">"gray40"</span>)</span>
-<span id="cb15-32"><a href="#cb15-32" aria-hidden="true" tabindex="-1"></a>  ) </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Clean up the background grid and axis lines from standard ggplot</span></span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_void</span>() <span class="sc">+</span> </span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"Customer Type"</span>) <span class="sc">+</span></span>
+<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">"bold"</span>, <span class="at">hjust =</span> <span class="fl">0.5</span>, <span class="at">size =</span> <span class="dv">14</span>),</span>
+<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.subtitle =</span> <span class="fu">element_text</span>(<span class="at">hjust =</span> <span class="fl">0.5</span>, <span class="at">color =</span> <span class="st">"gray40"</span>)</span>
+<span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a>  ) </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="index_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" alt="A pie chart showing the overall composition of total electricity consumption across four customer types: Residential, SME, Social Institution, and C&amp;I. Each slice is labeled with its corresponding percentage, clearly highlighting that SME accounts for the largest share of energy use, followed by Residential and C&amp;I." width="768"></p>
+<div id="fig-pie-comp" class="quarto-float quarto-figure quarto-figure-center anchored" alt="A pie chart showing the overall composition of total electricity consumption across four customer types: Residential, SME, Social Institution, and C&amp;I. Each slice is labeled with its corresponding percentage, clearly highlighting that SME accounts for the largest share of energy use, followed by Residential and C&amp;I.">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-pie-comp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-pie-comp-1.png" class="img-fluid figure-img" alt="A pie chart showing the overall composition of total electricity consumption across four customer types: Residential, SME, Social Institution, and C&amp;I. Each slice is labeled with its corresponding percentage, clearly highlighting that SME accounts for the largest share of energy use, followed by Residential and C&amp;I." width="768">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-pie-comp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: Proportion of daily total energy usage across customer types
+</figcaption>
 </figure>
 </div>
 </div>
 </div>
-<p>Even though C&amp;I have the largest daily kWh usage, SME accounts for the largest share of energy use, followed by Residential and C&amp;I based on the sheer number of households and SMEs compared to the larger industrial partners. Let’s create one more stacked chart to examine the daily kWh trends over time by type.</p>
+<p>Even though C&amp;I have the largest daily kWh usage, SME accounts for the largest share of energy use, followed by Residential and C&amp;I based on the sheer number of households and SMEs compared to the larger industrial partners. Let’s create one more stacked chart to examine the daily kWh trends over time by type. Aggregated daily totals highlighting average demand is shown in <a href="#fig-avg-time" class="quarto-xref">Figure&nbsp;6</a>.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate total max consumption during the peak load as a worst case</span></span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>daily_total_composition <span class="ot">&lt;-</span> summary_by_group <span class="sc">%&gt;%</span></span>
@@ -673,23 +700,26 @@ $ `Daily kWh`          &lt;dbl&gt; 107.9200000, 0.0000000, 331.7800000, 333.8200
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(daily_total_composition, <span class="fu">aes</span>(<span class="at">x =</span> Date, <span class="at">y =</span> Total_kWh_avg, <span class="at">fill =</span> customer_type)) <span class="sc">+</span></span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_area</span>(<span class="at">alpha =</span> <span class="fl">0.8</span>, <span class="at">color =</span> <span class="st">"white"</span>, <span class="at">linewidth =</span> <span class="fl">0.1</span>) <span class="sc">+</span></span>
 <span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Daily Grid Load Curve and Type Composition"</span>,</span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">"Aggregated daily totals highlighting average demand"</span>,</span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Date"</span>,</span>
-<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Daily Load (average kWh/day)"</span>,</span>
-<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"Connection Type"</span></span>
-<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_brewer</span>(<span class="at">palette =</span> <span class="st">"Set2"</span>) </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Date"</span>,</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Daily Load (average kWh/day)"</span>,</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"Connection Type"</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_brewer</span>(<span class="at">palette =</span> <span class="st">"Set2"</span>) </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="index_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid figure-img" alt="A stacked chart showing average energy loads across calendar days, filtered to exclude rows with zero daily load. Each bar represents a single day's total consumption, color-coded by connection type to illustrate contribution to daily load." width="672"></p>
+<div id="fig-avg-time" class="quarto-float quarto-figure quarto-figure-center anchored" alt="A stacked chart showing average energy loads across calendar days, filtered to exclude rows with zero daily load. Each bar represents a single day's total consumption, color-coded by connection type to illustrate contribution to daily load.">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-avg-time-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-avg-time-1.png" class="img-fluid figure-img" alt="A stacked chart showing average energy loads across calendar days, filtered to exclude rows with zero daily load. Each bar represents a single day's total consumption, color-coded by connection type to illustrate contribution to daily load." width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-avg-time-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;6: Daily Grid Load Curve and Type Composition
+</figcaption>
 </figure>
 </div>
 </div>
 </div>
-<p>It’s also important to understand the peak kWh values to right-size the grid. This comes from the max kWh/h values, taking the maximum load during the highest use point during the day. Let’s first group by day, then sum the value per day and see the composition from different types. This will give insights for the peak rated value for the grid (kWp) and potential back-up sources like diesel gen-sets and hydropower partnerships.</p>
+<p>It’s also important to understand the peak kWh values to right-size the grid. This comes from the max kWh/h values, taking the maximum load during the highest use point during the day. Let’s first group by day, then sum the value per day and see the composition from different types. This will give insights for the peak rated value for the grid (kWp) and potential back-up sources like diesel gen-sets and hydropower partnerships. Aggregated hourly totals highlighting peak demand periods are shown in <a href="#fig-peak-time" class="quarto-xref">Figure&nbsp;7</a>.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate total max consumption during the peak load as a worst case</span></span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>daily_composition <span class="ot">&lt;-</span> summary_by_group <span class="sc">%&gt;%</span></span>
@@ -723,18 +753,21 @@ $ `Daily kWh`          &lt;dbl&gt; 107.9200000, 0.0000000, 331.7800000, 333.8200
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(daily_composition, <span class="fu">aes</span>(<span class="at">x =</span> Date, <span class="at">y =</span> Max_kWh_peak, <span class="at">fill =</span> customer_type)) <span class="sc">+</span></span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_area</span>(<span class="at">alpha =</span> <span class="fl">0.8</span>, <span class="at">color =</span> <span class="st">"white"</span>, <span class="at">linewidth =</span> <span class="fl">0.1</span>) <span class="sc">+</span></span>
 <span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Peak Grid Load Curve and Type Composition"</span>,</span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">"Aggregated hourly totals highlighting peak demand periods"</span>,</span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Date"</span>,</span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Peak Load (max hourly kWh)"</span>,</span>
-<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"Connection Type"</span></span>
-<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
-<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_brewer</span>(<span class="at">palette =</span> <span class="st">"Set2"</span>) </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Date"</span>,</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Peak Load (max hourly kWh)"</span>,</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"Connection Type"</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_brewer</span>(<span class="at">palette =</span> <span class="st">"Set2"</span>) </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="index_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid figure-img" alt="A stacked chart showing total daily energy loads across calendar days, filtered to exclude rows with zero peak load. Each bar represents a single day's highest consumption, color-coded by connection type to illustrate contribution to peak load." width="672"></p>
+<div id="fig-peak-time" class="quarto-float quarto-figure quarto-figure-center anchored" alt="A stacked chart showing daily peak energy loads across calendar days, filtered to exclude rows with zero peak load. Each bar represents a single day's highest consumption, color-coded by connection type to illustrate contribution to peak load.">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-peak-time-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="index_files/figure-html/fig-peak-time-1.png" class="img-fluid figure-img" alt="A stacked chart showing daily peak energy loads across calendar days, filtered to exclude rows with zero peak load. Each bar represents a single day's highest consumption, color-coded by connection type to illustrate contribution to peak load." width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-peak-time-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;7: Peak Grid Load Curve and Type Composition
+</figcaption>
 </figure>
 </div>
 </div>
@@ -743,7 +776,13 @@ $ `Daily kWh`          &lt;dbl&gt; 107.9200000, 0.0000000, 331.7800000, 333.8200
 </section>
 <section id="conclusions" class="level1">
 <h1>Conclusions</h1>
-<p>The data has shown the following trends and considerations: The 2 months of data showed a generally consistent daily load, but the peak load varied significantly during the time frame. C&amp;Is made up a significant amount of the daily kWh demand per customer, but was actually slightly less total demand (26%) than SMEs (38%) and residential (33%) customers due to the number of clients total. Social Institutions were a small portion of daily demand (2%). SMEs were primarily uncategorized, and there was a huge spread in mean for SME categories that exist, especially highlighting the higher end of demand for Mills and Factories. Social Institution categories were much more consistent at &lt;5kWh/day, but there were several categories with very few customers. It was not possible to make claims for general seasonal or year-long trends due to the limited time frame of the data.</p>
+<p>The data has shown the following trends and considerations:</p>
+<ul>
+<li>The 2 months of data showed a generally consistent daily load, but the peak load varied significantly during the time frame.</li>
+<li>C&amp;Is made up a significant amount of the daily kWh demand per customer, but was actually slightly less total demand (26%) than SMEs (38%) and residential (33%) customers due to the number of clients total. Social Institutions were a small portion of daily demand (2%).</li>
+<li>SMEs were primarily uncategorized, and there was a huge spread in mean for SME categories that exist, especially highlighting the higher end of demand for Mills and Factories. Social Institution categories were much more consistent at &lt;5kWh/day, but there were several categories with very few customers.</li>
+<li>It was not possible to make claims for general seasonal or year-long trends due to the limited time frame of the data.</li>
+</ul>
 <section id="summary-of-findings" class="level2">
 <h2 class="anchored" data-anchor-id="summary-of-findings">Summary of Findings</h2>
 <p>The evidence presented above gives substantiation for separating out the daily and peak demand profiles for different categories of customers, especially in the C&amp;I (largest by-category demand) and SME (broadest range of demand) assumptions. These considerations will allow for more accurate forecasting of demand for right-sizing future mini-grids in this region by ensuring peak load cases are accurately predicted and total daily demand is allocated correctly.</p>

@@ -10,7 +10,7 @@ author:
         city: "Boulder"
         state: "CO"
         country: "USA"
-date: "July 05 2026"
+date: today
 format: html
 editor: visual
 
@@ -34,7 +34,7 @@ install.packages("writexl")
 install.packages("polyglotr")
 ```
 
-Since the file is a .xlsx file and not a .csv file, I had to install the "readxl" and "writexl" packages. I had some initial challenges loading the "readxl" package but finally was able to get it to work after uninstalling and re-installing. In hindsight, converting the file to a .csv might have been an easier way to start. 
+Since the file is a .xlsx file and not a .csv file, it's necessary to install the "readxl" and "writexl" packages. There were some initial challenges loading the "readxl" package but it finally worked after uninstalling and re-installing. In hindsight, converting the file to a .csv might have been an easier way to start. 
 
 ```{r}
 #| message: false
@@ -44,7 +44,6 @@ library(tidyverse)
 library(readxl)
 library(dplyr)
 library (writexl)
-library (polyglotr)
 library(knitr)
 library(ggplot2)
 
@@ -55,7 +54,7 @@ raw_power_data <- read_excel(here::here("data/raw/Power_consumption_categorized_
 
 ## Data Exploration Approach
 
-Time to view the data and see what needs tidying!
+First, view the data and see what needs tidying!
 
 ```{r}
 glimpse(raw_power_data)
@@ -79,18 +78,18 @@ category_grouped <- raw_power_data %>%
 ```
 
 The initial data set is 165,588 rows and 7 columns. 
-The column names are "date", "category", "customer code", "customer type", "hourly kWh average", "hourly kWh Max", and "daily kWh". I see some initial values showing of 0.000000 under some entries, and many repeating categories or types. 
+The column names are "date", "category", "customer code", "customer type", "hourly kWh average", "hourly kWh Max", and "daily kWh". There are initial values showing of 0.000000 under some entries, and many repeating categories or types. 
 
 Examined the average daily kWh for each major category and type for reference.
 
 ## Initial Data Tidying
 
-Fortunately the dates are already in YYYY-MM-DD format, so R has been able to ingest those ok. 
+Fortunately the dates are already in YYYY-MM-DD format, so R has been able to ingest those directly. 
 
 The data needs to sort out any 0.000000 and NA entries to not skew the mean values for the categories. The column names that have spaces need to be renames to remove the need to include "`" in every call-out.
 
 ```{r}
-
+# rename the data columns
 clean_power_data <- raw_power_data %>% 
   rename(
     customer_type = `Customer type`,
@@ -111,8 +110,8 @@ na_counts <- power_na_clean %>%
   group_by(customer_type) %>%
   summarise(na_count = sum(is.na(category)))
 
-# Remove rows with all 0.0000 values (some 0 values are OK since it's by day
-# , not every client will use power every day)
+# Remove rows with all 0.0000 values (some 0 values are OK since 
+# it's by day, not every client will use power every day)
 power_filtered <- power_na_clean %>%
   filter(if_any(c(kWh_avg_hourly, kWh_avg_max, kWh_per_day), ~ .x != 0))
 
@@ -120,13 +119,13 @@ power_filtered <- power_na_clean %>%
 
 There are >32,000 NA category entries in SME type. Removing all of these entries will skew the data significantly. Instead, keep NA category and treat as a general category.
 
-The first time I tried to calculate the NA values I got 0... which is incorrect because I noted a bunch of NA values in the Category column. I first had to convert the text "NA" entries into actual NA entries.
+The first time calculating the NA values was 0... which is incorrect because there were many NA values in the Category column. It was necessary to first convert the text "NA" entries into actual NA entries.
 
 Sorting out the entries with all 0 valued for the three numerical columns, the data set shrank from 165,588 rows to 149,263 rows. This now just includes data that has usable numerical values.
 
 
 ```{r}
-# save as a .xlsx file 
+# save as a new processed .xlsx file 
 write_xlsx(power_filtered, here::here("data/processed/power_filtered.xlsx"))
 
 ```
@@ -146,7 +145,6 @@ summary_by_group <- power_filtered %>%
 
 # Next, view the statistics for average kWh per day and wrap these into a 
 # usable table format 
-
 stat_power_table <- summary_by_group %>% 
   summarise(
     Total_Observations = n(),
@@ -156,6 +154,7 @@ stat_power_table <- summary_by_group %>%
     Max_Daily_kWh = max(kWh_per_day, na.rm = TRUE)
     )
 
+# Display the table
 stat_power_table %>% 
   kable(
     digits = 2,
@@ -165,13 +164,17 @@ stat_power_table %>%
 
 ```
 
-This table shows the general spread for each type and category of clients. Let's make a box plot to see this graphically and compare spread of data. 
+This table shows the general spread for each type and category of clients. Next, make a box plot to see this graphically and compare spread of data. 
 Since the scales for the data are so different between types, show the 4 different box plots on different scales. Use this to examine the different categories in each type.
+
+Daily kWh usage for Social Institutions is shown in @fig-HH-comp. 
 
 ```{r}
 #| message: false
 #| warning: false
-#| fig-alt: "A boxplot showing the distribution of daily electricity consumption in kWh for residential customers, grouped by connection type. Standard rates show a tighter distribution around 1 kWh, there is a concentration of high-use households around 4-5kWh that may be operating small businesses out of their residence."
+#| fig-cap: "Proportion of daily total energy usage across Resident categories"
+#| label: fig-HH-comp
+#| fig-alt: "A boxplot showing the distribution of daily electricity consumption in kWh for residential customers, grouped by the one connection category. Standard rates show a tighter distribution around 1 kWh, there is a concentration of high-use households around 4-5kWh that may be operating small businesses out of their residence."
 
 # Figure 1: Residential
 summary_by_group %>% 
@@ -179,7 +182,7 @@ summary_by_group %>%
   ggplot(aes(x = category, y = kWh_per_day, fill = category)) + 
   geom_boxplot(outlier.alpha = 0.05, show.legend = FALSE) + 
   coord_cartesian(ylim = c(0, 7)) + 
-  labs(title = "Residential Profiles", x = "Type", y = "Daily kWh") +
+  labs(title = "Residential Profiles", x = "Category", y = "Daily kWh") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1) 
   )
@@ -187,12 +190,16 @@ summary_by_group %>%
 
 ```
 
-Standard rates for households show a tighter distribution around 1 kWh, but there is a concentration of high-use households around 4-5kWh that may be operating small businesses out of their residence."
+Standard rates for households show a tighter distribution around 1 kWh, but there is a concentration of high-use households around 4-5kWh that may be operating small businesses out of their residence.
+
+Daily kWh usage for Social Institutions is shown in @fig-SME-comp. 
 
 ```{r}
 #| message: false
 #| warning: false
-#| fig-alt: "A boxplot showing the distribution of daily electricity consumption in kWh for SME customers, grouped by type. Standard rates for most categories are below 10kWh, while several categories such as Mill and Factory are higher."
+#| fig-cap: "Proportion of daily total energy usage across SME categories"
+#| label: fig-SME-comp
+#| fig-alt: "A boxplot showing the distribution of daily electricity consumption in kWh for SME customers, grouped by category. Standard rates for most categories are below 10kWh, while several categories such as Mill and Factory are higher."
 
 
 # Figure 2: SME
@@ -201,7 +208,7 @@ summary_by_group %>%
   ggplot(aes(x = category, y = kWh_per_day, fill = category)) + 
   geom_boxplot(outlier.alpha = 0.05, show.legend = FALSE) + 
   coord_cartesian(ylim = c(0, 55)) + 
-  labs(title = "Small Medium Enterprises", x = "Type", y = "Daily kWh") +
+  labs(title = "Small Medium Enterprises", x = "Category", y = "Daily kWh") +
   theme_minimal()+
   theme(axis.text.x = element_text(angle = 45, hjust = 1) 
   ) 
@@ -209,10 +216,14 @@ summary_by_group %>%
 
 Standard rates for most categories of SME are below 10kWh, while several categories such as Mill and Factory are higher. There is a large difference between values within the SME type.
 
+Daily kWh usage for Social Institutions is shown in @fig-SI-comp. 
+
 ```{r}
 #| message: false
 #| warning: false
-#| fig-alt: "A boxplot showing the distribution of daily electricity consumption in kWh for Social Institutions , grouped by type. Standard rates for most categories are below 5kWh, with the largest usage from NGO and Carpentry."
+#| fig-cap: "Proportion of daily total energy usage across Social Institution categories"
+#| label: fig-SI-comp
+#| fig-alt: "A boxplot showing the distribution of daily electricity consumption in kWh for Social Institutions, grouped by category. Standard rates for most categories are below 5kWh, with the largest usage from NGO and Carpentry."
 
 
 # Figure 3: Social Institution
@@ -221,19 +232,23 @@ summary_by_group %>%
   ggplot(aes(x = category, y = kWh_per_day, fill = category)) + 
   geom_boxplot(outlier.alpha = 0.05, show.legend = FALSE) + 
   coord_cartesian(ylim = c(0, 15)) + 
-  labs(title = "Social Institutions", x = "Type", y = "Daily kWh") +
+  labs(title = "Social Institutions", x = "Category", y = "Daily kWh") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1) 
   )
 
 ```
 
-Standard rates for most categories in Social Institutions are below 5kWh, with the largest usage from NGO and Carpentry.
+Standard rates for most categories in Social Institutions are below 5kWh, with the largest usage from NGO and Carpentry. There is a much smaller sample size for Social Institutions which limits the conidence in the spread of the data.
+
+Daily kWh usage from C&I clients is shown in @fig-CI-comp.
 
 ```{r}
 #| message: false
 #| warning: false
-#| fig-alt: "A boxplot showing the distribution of daily electricity consumption in kWh for Social Institutions , grouped by type. Standard rates for most categories are below 5kWh, with the largest usage from NGO and Carpentry."
+#| fig-cap: "Proportion of daily total energy usage across C&I categories"
+#| label: fig-CI-comp
+#| fig-alt: "A boxplot showing the distribution of daily electricity consumption in kWh for C&Is, grouped by category."
 
 # Figure 4: C&I
 summary_by_group %>% 
@@ -241,7 +256,7 @@ summary_by_group %>%
   ggplot(aes(x = category, y = kWh_per_day, fill = category)) + 
   geom_boxplot(outlier.alpha = 0.05, show.legend = FALSE) + 
   coord_cartesian(ylim = c(0, 500)) + 
-  labs(title = "C&I Profiles", x = "Type", y = "Daily kWh") +
+  labs(title = "C&I Profiles", x = "Category", y = "Daily kWh") +
   theme_minimal()+
   theme(axis.text.x = element_text(angle = 45, hjust = 1) 
   )
@@ -250,13 +265,17 @@ summary_by_group %>%
 
 Average C&I usage is significantly higher than the other types, averaging over 100kWh/day.
 
-Now that the spread of daily kWh has been assessed for each type and category, let's look at the general composition of daily power consumption. 
+Now that the spread of daily kWh has been assessed for each type and category, we can look at the general composition of daily power consumption.
+
+@fig-pie-comp Shows the overall daily kWh consumption by customer type.
 
 ```{r}
 #| message: false
 #| warning: false
 #| fig.width: 8
 #| fig.height: 6
+#| fig-cap: "Proportion of daily total energy usage across customer types"
+#| label: fig-pie-comp
 #| fig-alt: "A pie chart showing the overall composition of total electricity consumption across four customer types: Residential, SME, Social Institution, and C&I. Each slice is labeled with its corresponding percentage, clearly highlighting that SME accounts for the largest share of energy use, followed by Residential and C&I."
 
 library(scales) 
@@ -279,14 +298,10 @@ ggplot(pie_data, aes(x = "", y = total_kWh, fill = customer_type)) +
     size = 4, 
     color = "black", 
   ) +
-  
   # Clean up the background grid and axis lines from standard ggplot
   theme_void() + 
   labs(
-    title = "Overall Composition of Daily kWh Consumption",
-    subtitle = "Proportion of total energy usage across customer types",
-    fill = "Customer Type"
-  ) +
+    fill = "Customer Type") +
   theme(
     plot.title = element_text(face = "bold", hjust = 0.5, size = 14),
     plot.subtitle = element_text(hjust = 0.5, color = "gray40")
@@ -294,11 +309,13 @@ ggplot(pie_data, aes(x = "", y = total_kWh, fill = customer_type)) +
 
 ```
 
-Even though C&I have the largest daily kWh usage, SME accounts for the largest share of energy use, followed by Residential and C&I based on the sheer number of households and SMEs compared to the larger industrial partners. Let's create one more stacked chart to examine the daily kWh trends over time by type. 
+Even though C&I have the largest daily kWh usage, SME accounts for the largest share of energy use, followed by Residential and C&I based on the sheer number of households and SMEs compared to the larger industrial partners. Let's create one more stacked chart to examine the daily kWh trends over time by type. Aggregated daily totals highlighting average demand is shown in @fig-avg-time.
 
 ```{r}
 #| message: false
 #| warning: false
+#| fig-cap: "Daily Grid Load Curve and Type Composition"
+#| label: fig-avg-time
 #| fig-alt: "A stacked chart showing average energy loads across calendar days, filtered to exclude rows with zero daily load. Each bar represents a single day's total consumption, color-coded by connection type to illustrate contribution to daily load."
 
 # Calculate total max consumption during the peak load as a worst case
@@ -318,8 +335,6 @@ print(daily_total_composition)
 ggplot(daily_total_composition, aes(x = Date, y = Total_kWh_avg, fill = customer_type)) +
   geom_area(alpha = 0.8, color = "white", linewidth = 0.1) +
   labs(
-    title = "Daily Grid Load Curve and Type Composition",
-    subtitle = "Aggregated daily totals highlighting average demand",
     x = "Date",
     y = "Daily Load (average kWh/day)",
     fill = "Connection Type"
@@ -329,12 +344,14 @@ ggplot(daily_total_composition, aes(x = Date, y = Total_kWh_avg, fill = customer
 ```
 
 
-It's also important to understand the peak kWh values to right-size the grid. This comes from the max kWh/h values, taking the maximum load during the highest use point during the day. Let's first group by day, then sum the value per day and see the composition from different types. This will give insights for the peak rated value for the grid (kWp) and potential back-up sources like diesel gen-sets and hydropower partnerships.
+It's also important to understand the peak kWh values to right-size the grid. This comes from the max kWh/h values, taking the maximum load during the highest use point during the day. Let's first group by day, then sum the value per day and see the composition from different types. This will give insights for the peak rated value for the grid (kWp) and potential back-up sources like diesel gen-sets and hydropower partnerships. Aggregated hourly totals highlighting peak demand periods are shown in @fig-peak-time.
 
 ```{r}
 #| message: false
 #| warning: false
-#| fig-alt: "A stacked chart showing total daily energy loads across calendar days, filtered to exclude rows with zero peak load. Each bar represents a single day's highest consumption, color-coded by connection type to illustrate contribution to peak load."
+#| fig-cap: "Peak Grid Load Curve and Type Composition"
+#| label: fig-peak-time
+#| fig-alt: "A stacked chart showing daily peak energy loads across calendar days, filtered to exclude rows with zero peak load. Each bar represents a single day's highest consumption, color-coded by connection type to illustrate contribution to peak load."
 
 # Calculate total max consumption during the peak load as a worst case
 daily_composition <- summary_by_group %>%
@@ -353,8 +370,6 @@ print(daily_composition)
 ggplot(daily_composition, aes(x = Date, y = Max_kWh_peak, fill = customer_type)) +
   geom_area(alpha = 0.8, color = "white", linewidth = 0.1) +
   labs(
-    title = "Peak Grid Load Curve and Type Composition",
-    subtitle = "Aggregated hourly totals highlighting peak demand periods",
     x = "Date",
     y = "Peak Load (max hourly kWh)",
     fill = "Connection Type"
@@ -363,15 +378,17 @@ ggplot(daily_composition, aes(x = Date, y = Max_kWh_peak, fill = customer_type))
   scale_fill_brewer(palette = "Set2") 
 
 ```
+
 The chart shows the contribution of each type to the peak load values. Since this grid is designed to a peak load of 1.3 MW, there are many days in the analyzed period in excess of this value that need a diesel genset or hydropower back-up source. There are also several anomolous time periods that need further investigation because of significant spikes or drops.
 
 # Conclusions
 
 The data has shown the following trends and considerations:
-The 2 months of data showed a generally consistent daily load, but the peak load varied significantly during the time frame. 
-C&Is made up a significant amount of the daily kWh demand per customer, but was actually slightly less total demand (26%) than SMEs (38%) and residential (33%) customers due to the number of clients total. Social Institutions were a small portion of daily demand (2%).
-SMEs were primarily uncategorized, and there was a huge spread in mean for SME categories that exist, especially highlighting the higher end of demand for Mills and Factories. Social Institution categories were much more consistent at <5kWh/day, but there were several categories with very few customers.
-It was not possible to make claims for general seasonal or year-long trends due to the limited time frame of the data.
+
+- The 2 months of data showed a generally consistent daily load, but the peak load varied significantly during the time frame. 
+- C&Is made up a significant amount of the daily kWh demand per customer, but was actually slightly less total demand (26%) than SMEs (38%) and residential (33%) customers due to the number of clients total. Social Institutions were a small portion of daily demand (2%).
+- SMEs were primarily uncategorized, and there was a huge spread in mean for SME categories that exist, especially highlighting the higher end of demand for Mills and Factories. Social Institution categories were much more consistent at <5kWh/day, but there were several categories with very few customers.
+- It was not possible to make claims for general seasonal or year-long trends due to the limited time frame of the data.
 
 
 ## Summary of Findings

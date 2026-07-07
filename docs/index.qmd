@@ -28,10 +28,13 @@ The data was collected from the IT team at the organization after specifying the
 ```{r}
 #| message: false
 #| warning: false
-# Install packages
+#| eval: false
+# Install packages - leaving here for context for others
 install.packages("readxl")
 install.packages("writexl")
 install.packages("polyglotr")
+# didn't end up using polyglotr this time but would be necessary for 
+# new untranslated data
 ```
 
 Since the file is a .xlsx file and not a .csv file, it's necessary to install the "readxl" and "writexl" packages. There were some initial challenges loading the "readxl" package but it finally worked after uninstalling and re-installing. In hindsight, converting the file to a .csv might have been an easier way to start. 
@@ -64,7 +67,7 @@ dim(raw_power_data)
 # calculate average daily kWh per customer type
 customer_grouped <- raw_power_data %>% 
   group_by(`Customer type`) %>% 
-  summarize(mean_daily_kWh = mean(`Daily kWh`, total_count = n()))
+  summarize(mean_daily_kWh = mean(`Daily kWh`), total_count = n())
 
 # 4 main types of customers to examine
 
@@ -92,7 +95,6 @@ The data needs to sort out any 0.000000 and NA entries to not skew the mean valu
 # rename the data columns
 clean_power_data <- raw_power_data %>% 
   rename(
-    customer_type = `Customer type`,
     category = Category,
     customer_code = `Customer Code`,
     customer_type = `Customer type`,
@@ -110,10 +112,22 @@ na_counts <- power_na_clean %>%
   group_by(customer_type) %>%
   summarise(na_count = sum(is.na(category)))
 
+# count the number of duplicated entries
+power_dupes <- power_na_clean %>%  
+  count(customer_code, Date) %>%  
+  filter(n > 1) 
+
 # Remove rows with all 0.0000 values (some 0 values are OK since 
 # it's by day, not every client will use power every day)
 power_filtered <- power_na_clean %>%
   filter(if_any(c(kWh_avg_hourly, kWh_avg_max, kWh_per_day), ~ .x != 0))
+
+# remove the 12 entries duplicated customer codes per day
+# placing this step after the 0.000 removal in case there were errant entries
+power_deduplicated <- power_filtered %>% 
+  distinct(customer_code, Date, .keep_all = TRUE)
+
+# sure enough, 3 of the 12 duplicates were a 0.00 entry. 9 other dupes removed.
 
 ```
 
@@ -121,12 +135,12 @@ There are >32,000 NA category entries in SME type. Removing all of these entries
 
 The first time calculating the NA values was 0... which is incorrect because there were many NA values in the Category column. It was necessary to first convert the text "NA" entries into actual NA entries.
 
-Sorting out the entries with all 0 valued for the three numerical columns, the data set shrank from 165,588 rows to 149,263 rows. This now just includes data that has usable numerical values.
+Sorting out the entries with all 0 valued for the three numerical columns and removing duplicate entries on the same day for a customer code, the data set shrank from 165,588 rows to 149,254 rows. This now just includes data that has usable numerical values.
 
 
 ```{r}
 # save as a new processed .xlsx file 
-write_xlsx(power_filtered, here::here("data/processed/power_filtered.xlsx"))
+write_xlsx(power_deduplicated, here::here("data/processed/power_filtered.xlsx"))
 
 ```
 
@@ -167,7 +181,7 @@ stat_power_table %>%
 This table shows the general spread for each type and category of clients. Next, make a box plot to see this graphically and compare spread of data. 
 Since the scales for the data are so different between types, show the 4 different box plots on different scales. Use this to examine the different categories in each type.
 
-Daily kWh usage for Social Institutions is shown in @fig-HH-comp. 
+Daily kWh usage for Households is shown in @fig-HH-comp. 
 
 ```{r}
 #| message: false
@@ -239,7 +253,7 @@ summary_by_group %>%
 
 ```
 
-Standard rates for most categories in Social Institutions are below 5kWh, with the largest usage from NGO and Carpentry. There is a much smaller sample size for Social Institutions which limits the conidence in the spread of the data.
+Standard rates for most categories in Social Institutions are below 5kWh, with the largest usage from NGO and Carpentry. There is a much smaller sample size for Social Institutions which limits the confidence in the spread of the data.
 
 Daily kWh usage from C&I clients is shown in @fig-CI-comp.
 
@@ -379,7 +393,7 @@ ggplot(daily_composition, aes(x = Date, y = Max_kWh_peak, fill = customer_type))
 
 ```
 
-The chart shows the contribution of each type to the peak load values. Since this grid is designed to a peak load of 1.3 MW, there are many days in the analyzed period in excess of this value that need a diesel genset or hydropower back-up source. There are also several anomolous time periods that need further investigation because of significant spikes or drops.
+The chart shows the contribution of each type to the peak load values. Since this grid is designed to a peak load of 1.3 MW, there are many days in the analyzed period in excess of this value that need a diesel genset or hydropower back-up source. There are also several anomalous time periods that need further investigation because of significant spikes or drops.
 
 # Conclusions
 

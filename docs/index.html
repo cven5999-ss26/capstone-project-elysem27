@@ -7,9 +7,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Elyse McMillen">
-<meta name="dcterms.date" content="2026-07-06">
+<meta name="dcterms.date" content="2026-07-07">
 
-<title>Solar mini-grid power consumption profiles in DRC</title>
+<title>Solar Mini-Grid Power Consumption Profiles in the DRC</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -84,7 +84,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Solar mini-grid power consumption profiles in DRC</h1>
+<h1 class="title">Solar Mini-Grid Power Consumption Profiles in the DRC</h1>
 </div>
 
 
@@ -108,7 +108,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">July 6, 2026</p>
+      <p class="date">July 7, 2026</p>
     </div>
   </div>
   
@@ -130,10 +130,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="reading-the-data" class="level2">
 <h2 class="anchored" data-anchor-id="reading-the-data">Reading the Data</h2>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Install packages</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Install packages - leaving here for context for others</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"readxl"</span>)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"writexl"</span>)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"polyglotr"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">"polyglotr"</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># didn't end up using polyglotr this time but would be necessary for </span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># new untranslated data</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Since the file is a .xlsx file and not a .csv file, it’s necessary to install the “readxl” and “writexl” packages. There were some initial challenges loading the “readxl” package but it finally worked after uninstalling and re-installing. In hindsight, converting the file to a .csv might have been an easier way to start.</p>
 <div class="cell">
@@ -172,7 +174,7 @@ $ `Daily kWh`          &lt;dbl&gt; 107.9200000, 0.0000000, 331.7800000, 333.8200
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># calculate average daily kWh per customer type</span></span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>customer_grouped <span class="ot">&lt;-</span> raw_power_data <span class="sc">%&gt;%</span> </span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(<span class="st">`</span><span class="at">Customer type</span><span class="st">`</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">mean_daily_kWh =</span> <span class="fu">mean</span>(<span class="st">`</span><span class="at">Daily kWh</span><span class="st">`</span>, <span class="at">total_count =</span> <span class="fu">n</span>()))</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">mean_daily_kWh =</span> <span class="fu">mean</span>(<span class="st">`</span><span class="at">Daily kWh</span><span class="st">`</span>), <span class="at">total_count =</span> <span class="fu">n</span>())</span>
 <span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 4 main types of customers to examine</span></span>
 <span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
@@ -194,35 +196,46 @@ $ `Daily kWh`          &lt;dbl&gt; 107.9200000, 0.0000000, 331.7800000, 333.8200
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># rename the data columns</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>clean_power_data <span class="ot">&lt;-</span> raw_power_data <span class="sc">%&gt;%</span> </span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">customer_type =</span> <span class="st">`</span><span class="at">Customer type</span><span class="st">`</span>,</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">category =</span> Category,</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">customer_code =</span> <span class="st">`</span><span class="at">Customer Code</span><span class="st">`</span>,</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">customer_type =</span> <span class="st">`</span><span class="at">Customer type</span><span class="st">`</span>,</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">kWh_avg_hourly =</span> <span class="st">`</span><span class="at">Hourly kWh Average</span><span class="st">`</span>,</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">kWh_avg_max =</span> <span class="st">`</span><span class="at">Hourly kWh Max</span><span class="st">`</span>,</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">kWh_per_day =</span> <span class="st">`</span><span class="at">Daily kWh</span><span class="st">`</span></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="co"># convert NA text to NA data entry in the sheet</span></span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>power_na_clean <span class="ot">&lt;-</span> clean_power_data <span class="sc">%&gt;%</span> </span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">where</span>(is.character), <span class="sc">~</span> <span class="fu">na_if</span>(., <span class="st">"NA"</span>)))</span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="co"># count the number of NA data entries</span></span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>na_counts <span class="ot">&lt;-</span> power_na_clean <span class="sc">%&gt;%</span></span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(customer_type) <span class="sc">%&gt;%</span></span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">na_count =</span> <span class="fu">sum</span>(<span class="fu">is.na</span>(category)))</span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove rows with all 0.0000 values (some 0 values are OK since </span></span>
-<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a><span class="co"># it's by day, not every client will use power every day)</span></span>
-<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>power_filtered <span class="ot">&lt;-</span> power_na_clean <span class="sc">%&gt;%</span></span>
-<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">if_any</span>(<span class="fu">c</span>(kWh_avg_hourly, kWh_avg_max, kWh_per_day), <span class="sc">~</span> .x <span class="sc">!=</span> <span class="dv">0</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">category =</span> Category,</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">customer_code =</span> <span class="st">`</span><span class="at">Customer Code</span><span class="st">`</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">customer_type =</span> <span class="st">`</span><span class="at">Customer type</span><span class="st">`</span>,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">kWh_avg_hourly =</span> <span class="st">`</span><span class="at">Hourly kWh Average</span><span class="st">`</span>,</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">kWh_avg_max =</span> <span class="st">`</span><span class="at">Hourly kWh Max</span><span class="st">`</span>,</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">kWh_per_day =</span> <span class="st">`</span><span class="at">Daily kWh</span><span class="st">`</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="co"># convert NA text to NA data entry in the sheet</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>power_na_clean <span class="ot">&lt;-</span> clean_power_data <span class="sc">%&gt;%</span> </span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">where</span>(is.character), <span class="sc">~</span> <span class="fu">na_if</span>(., <span class="st">"NA"</span>)))</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a><span class="co"># count the number of NA data entries</span></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>na_counts <span class="ot">&lt;-</span> power_na_clean <span class="sc">%&gt;%</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(customer_type) <span class="sc">%&gt;%</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">na_count =</span> <span class="fu">sum</span>(<span class="fu">is.na</span>(category)))</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a><span class="co"># count the number of duplicated entries</span></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>power_dupes <span class="ot">&lt;-</span> power_na_clean <span class="sc">%&gt;%</span>  </span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(customer_code, Date) <span class="sc">%&gt;%</span>  </span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(n <span class="sc">&gt;</span> <span class="dv">1</span>) </span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove rows with all 0.0000 values (some 0 values are OK since </span></span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a><span class="co"># it's by day, not every client will use power every day)</span></span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>power_filtered <span class="ot">&lt;-</span> power_na_clean <span class="sc">%&gt;%</span></span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">if_any</span>(<span class="fu">c</span>(kWh_avg_hourly, kWh_avg_max, kWh_per_day), <span class="sc">~</span> .x <span class="sc">!=</span> <span class="dv">0</span>))</span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a><span class="co"># remove the 12 entries duplicated customer codes per day</span></span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a><span class="co"># placing this step after the 0.000 removal in case there were errant entries</span></span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>power_deduplicated <span class="ot">&lt;-</span> power_filtered <span class="sc">%&gt;%</span> </span>
+<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(customer_code, Date, <span class="at">.keep_all =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a><span class="co"># sure enough, 3 of the 12 duplicates were a 0.00 entry. 9 other dupes removed.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>There are &gt;32,000 NA category entries in SME type. Removing all of these entries will skew the data significantly. Instead, keep NA category and treat as a general category.</p>
 <p>The first time calculating the NA values was 0… which is incorrect because there were many NA values in the Category column. It was necessary to first convert the text “NA” entries into actual NA entries.</p>
-<p>Sorting out the entries with all 0 valued for the three numerical columns, the data set shrank from 165,588 rows to 149,263 rows. This now just includes data that has usable numerical values.</p>
+<p>Sorting out the entries with all 0 valued for the three numerical columns and removing duplicate entries on the same day for a customer code, the data set shrank from 165,588 rows to 149,254 rows. This now just includes data that has usable numerical values.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># save as a new processed .xlsx file </span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">write_xlsx</span>(power_filtered, here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data/processed/power_filtered.xlsx"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">write_xlsx</span>(power_deduplicated, here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data/processed/power_filtered.xlsx"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 </section>
@@ -517,7 +530,7 @@ $ `Daily kWh`          &lt;dbl&gt; 107.9200000, 0.0000000, 331.7800000, 333.8200
 </div>
 </div>
 <p>This table shows the general spread for each type and category of clients. Next, make a box plot to see this graphically and compare spread of data. Since the scales for the data are so different between types, show the 4 different box plots on different scales. Use this to examine the different categories in each type.</p>
-<p>Daily kWh usage for Social Institutions is shown in <a href="#fig-HH-comp" class="quarto-xref">Figure&nbsp;1</a>.</p>
+<p>Daily kWh usage for Households is shown in <a href="#fig-HH-comp" class="quarto-xref">Figure&nbsp;1</a>.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Figure 1: Residential</span></span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>summary_by_group <span class="sc">%&gt;%</span> </span>
@@ -594,7 +607,7 @@ Figure&nbsp;3: Proportion of daily total energy usage across Social Institution 
 </div>
 </div>
 </div>
-<p>Standard rates for most categories in Social Institutions are below 5kWh, with the largest usage from NGO and Carpentry. There is a much smaller sample size for Social Institutions which limits the conidence in the spread of the data.</p>
+<p>Standard rates for most categories in Social Institutions are below 5kWh, with the largest usage from NGO and Carpentry. There is a much smaller sample size for Social Institutions which limits the confidence in the spread of the data.</p>
 <p>Daily kWh usage from C&amp;I clients is shown in <a href="#fig-CI-comp" class="quarto-xref">Figure&nbsp;4</a>.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Figure 4: C&amp;I</span></span>
@@ -771,7 +784,7 @@ Figure&nbsp;7: Peak Grid Load Curve and Type Composition
 </div>
 </div>
 </div>
-<p>The chart shows the contribution of each type to the peak load values. Since this grid is designed to a peak load of 1.3 MW, there are many days in the analyzed period in excess of this value that need a diesel genset or hydropower back-up source. There are also several anomolous time periods that need further investigation because of significant spikes or drops.</p>
+<p>The chart shows the contribution of each type to the peak load values. Since this grid is designed to a peak load of 1.3 MW, there are many days in the analyzed period in excess of this value that need a diesel genset or hydropower back-up source. There are also several anomalous time periods that need further investigation because of significant spikes or drops.</p>
 </section>
 <section id="conclusions" class="level1">
 <h1>Conclusions</h1>
